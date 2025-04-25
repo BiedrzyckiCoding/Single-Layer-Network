@@ -8,7 +8,7 @@ import SingleLayerNetwork.*;
 public class Main {
     //codes for coloring (taken from stackoverflow)
     public static final String ANSI_GREEN = "\u001B[32m";
-    public static final String ANSI_RED   = "\u001B[31m";
+    public static final String ANSI_RED = "\u001B[31m";
     public static final String ANSI_RESET = "\u001B[0m";
 
     public static void main(String[] args) {
@@ -31,11 +31,11 @@ public class Main {
                 line = line.trim();
                 if (line.isEmpty()) continue;
 
-                //split on first comma → [trueLabel, rawText]
-                String[] parts     = line.split(",", 2);
-                String trueLabel  = parts[0];
-                String rawText    = (parts.length > 1 ? parts[1] : "");
-                String predLabel  = net.classify(rawText);
+                //split on first comma -> [trueLabel, rawText]
+                String[] parts = line.split(",", 2);
+                String trueLabel = parts[0];
+                String rawText = (parts.length > 1 ? parts[1] : "");
+                String predLabel = net.classify(rawText);
 
                 boolean isCorrect = predLabel.equals(trueLabel);
                 if (isCorrect) correct++;
@@ -43,10 +43,7 @@ public class Main {
 
                 String color = isCorrect ? ANSI_GREEN : ANSI_RED;
                 //print entire original line + arrow + predicted label
-                System.out.println(color
-                        + line
-                        + "  →  " + predLabel
-                        + ANSI_RESET);
+                System.out.println(color + line + "  ->  " + predLabel + ANSI_RESET);
             }
             br.close();
 
