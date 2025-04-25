@@ -1,53 +1,73 @@
-import SingleLayerNetwork.LangFileReader;
-import SingleLayerNetwork.SingleLayerNetwork;
-import SingleLayerNetwork.TextVectorizer;
-
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Scanner;
 
+import SingleLayerNetwork.*;
+
 public class Main {
-    // safeSplitTextLabel and everything above goes here
+    //codes for coloring (taken from stackoverflow)
+    public static final String ANSI_GREEN = "\u001B[32m";
+    public static final String ANSI_RED   = "\u001B[31m";
+    public static final String ANSI_RESET = "\u001B[0m";
 
-    public static void main(String[] args) throws IOException {
-        // 1. load train & test
-        var train = LangFileReader.read("resources/lang.train.csv");
-        var test  = LangFileReader.read("resources/lang.test.csv");
+    public static void main(String[] args) {
+        String trainFile = "resources/lang.train.csv";
+        String testFile = "resources/lang.test.csv";
+        double learningRate = 0.1;
+        int epochs = 20;
 
-        int dim = train.X.get(0).size();
-        double eta = 0.01;
-        SingleLayerNetwork net = new SingleLayerNetwork(dim, train.labelNames, eta);
+        try {
+            //build & train
+            SingleLayerNetwork net = new SingleLayerNetwork(trainFile, testFile, learningRate, epochs);
+            net.train();
 
-        // 2. train
-        int epochs = 10;
-        net.train(train.X, train.y, epochs);
+            //color-coded test output
+            System.out.println("\n=== Test set results ===");
+            BufferedReader br = new BufferedReader(new FileReader(testFile));
+            String line;
+            int total = 0, correct = 0;
+            while ((line = br.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty()) continue;
 
-        // 3. evaluate
-        int correct = 0;
-        System.out.println("Misclassified examples:");
-        for (int i = 0; i < test.X.size(); i++) {
-            String pred = net.predictLabel(test.X.get(i));
-            String truth = test.labelNames.get(test.y.get(i));
-            if (pred.equals(truth)) {
-                correct++;
-            } else {
-                System.out.printf(" > “%s” → %s (should be %s)%n",
-                        test.rawText.get(i), pred, truth);
+                //split on first comma → [trueLabel, rawText]
+                String[] parts     = line.split(",", 2);
+                String trueLabel  = parts[0];
+                String rawText    = (parts.length > 1 ? parts[1] : "");
+                String predLabel  = net.classify(rawText);
+
+                boolean isCorrect = predLabel.equals(trueLabel);
+                if (isCorrect) correct++;
+                total++;
+
+                String color = isCorrect ? ANSI_GREEN : ANSI_RED;
+                //print entire original line + arrow + predicted label
+                System.out.println(color
+                        + line
+                        + "  →  " + predLabel
+                        + ANSI_RESET);
             }
-        }
-        double acc = 100.0 * correct / test.X.size();
-        System.out.printf("Test accuracy: %.2f%%%n", acc);
+            br.close();
 
-        // 4. CLI for new inputs
-        Scanner sc = new Scanner(System.in);
-        System.out.println("Enter any text to classify (blank to quit):");
-        while (true) {
-            String line = sc.nextLine();
-            if (line.trim().isEmpty()) break;
-            var vec = TextVectorizer.vectorize(line);
-            String lang = net.predictLabel(vec);
-            System.out.println("→ “" + lang + "”");
+            double accuracy = 100.0 * correct / total;
+            System.out.printf("%nOverall accuracy: %.2f%%%n", accuracy);
+
+            //user input
+            Scanner sc = new Scanner(System.in);
+            System.out.println("\nEnter your own text to classify (empty line to quit):");
+            while (true) {
+                System.out.print("> ");
+                String userText = sc.nextLine().trim();
+                if (userText.isEmpty()) break;
+                String lang = net.classify(userText);
+                System.out.println("Detected language: " + lang);
+            }
+            sc.close();
+
+        } catch (IOException ex) {
+            System.err.println("Error reading data files: " + ex.getMessage());
+            System.exit(1);
         }
-        sc.close();
     }
 }
