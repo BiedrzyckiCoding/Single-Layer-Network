@@ -1,44 +1,53 @@
+import SingleLayerNetwork.LangFileReader;
+import SingleLayerNetwork.SingleLayerNetwork;
+import SingleLayerNetwork.TextVectorizer;
+
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Random;
+import java.util.Scanner;
 
 public class Main {
-    public static void main(String[] args) {
+    // safeSplitTextLabel and everything above goes here
 
-        //read a training set and a test set using FileReader methods.
-        FileReader.DataSet trainData = FileReader.readCSV("resources/perceptron.data");
-        FileReader.DataSet testData  = FileReader.readCSV("resources/perceptron.test.data");
+    public static void main(String[] args) throws IOException {
+        // 1. load train & test
+        var train = LangFileReader.read("resources/lang.train.csv");
+        var test  = LangFileReader.read("resources/lang.test.csv");
 
-        //initialize a Perceptron
-        //automatically set the number of weights to match the dimension of the training data's feature vectors.
-        int dimension = trainData.data.get(0).size();
-        ArrayList<Double> initialWeights = new ArrayList<>();
-        Random rand = new Random();
-        for (int i = 0; i < dimension; i++) {
-            initialWeights.add(rand.nextDouble()); //random [0,1]
-        }
-        System.out.println("initial weights: " + initialWeights);
-        double initialBias = rand.nextDouble(); //random [0,1]
-        double learningRate = 0.01; //small learning rate
+        int dim = train.X.get(0).size();
+        double eta = 0.01;
+        SingleLayerNetwork net = new SingleLayerNetwork(dim, train.labelNames, eta);
 
-        Perceptron perceptron = new Perceptron(initialWeights, initialBias, learningRate);
-
-        //train the perceptron on the training data
+        // 2. train
         int epochs = 10;
-        perceptron.train(trainData.data, trainData.labels, epochs);
+        net.train(train.X, train.y, epochs);
 
-        //evaluate on the test set
-        int correctCount = 0;
-        for (int i = 0; i < testData.data.size(); i++) {
-            ArrayList<Double> x = testData.data.get(i);
-            int label = testData.labels.get(i);
-            int prediction = perceptron.output(x);
-            if (prediction == label) {
-                correctCount++;
+        // 3. evaluate
+        int correct = 0;
+        System.out.println("Misclassified examples:");
+        for (int i = 0; i < test.X.size(); i++) {
+            String pred = net.predictLabel(test.X.get(i));
+            String truth = test.labelNames.get(test.y.get(i));
+            if (pred.equals(truth)) {
+                correct++;
+            } else {
+                System.out.printf(" > “%s” → %s (should be %s)%n",
+                        test.rawText.get(i), pred, truth);
             }
         }
-        double accuracy = 100.0 * correctCount / testData.data.size();
-        System.out.println("Accuracy on test set: " + accuracy + "%");
+        double acc = 100.0 * correct / test.X.size();
+        System.out.printf("Test accuracy: %.2f%%%n", acc);
 
-        //Gui gui = new Gui();
+        // 4. CLI for new inputs
+        Scanner sc = new Scanner(System.in);
+        System.out.println("Enter any text to classify (blank to quit):");
+        while (true) {
+            String line = sc.nextLine();
+            if (line.trim().isEmpty()) break;
+            var vec = TextVectorizer.vectorize(line);
+            String lang = net.predictLabel(vec);
+            System.out.println("→ “" + lang + "”");
+        }
+        sc.close();
     }
 }

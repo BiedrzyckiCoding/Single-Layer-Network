@@ -1,9 +1,11 @@
+package Perceptron;
+
 import java.util.ArrayList;
 
 public class Perceptron {
     ArrayList<Double> inputVec;
-    ArrayList<Double> weights;
-    double bias;
+    public ArrayList<Double> weights;
+    public double bias;
     double learningRate;
     double expectedOutput;
     public String testFilePath;
@@ -35,7 +37,7 @@ public class Perceptron {
         return netVal(net);
     }
 
-    private void updateWeights(ArrayList<Double> xVector, int label, int predicted) {
+    public void updateWeights(ArrayList<Double> xVector, int label, int predicted) {
         double constant = learningRate * (label - predicted);
         //update each weight
         for (int i = 0; i < weights.size(); i++) {
