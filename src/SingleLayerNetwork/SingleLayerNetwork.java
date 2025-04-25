@@ -101,8 +101,8 @@ public class SingleLayerNetwork {
                 //one-vs-all update
                 for (int j = 0; j < perceptrons.size(); j++) {
                     Perceptron p = perceptrons.get(j);
-                    int target    = (j == trueIdx) ? 1 : 0;
-                    int pred      = p.output(x);
+                    int target = (j == trueIdx) ? 1 : 0;
+                    int pred = p.output(x);
                     if (pred != target) {
                         p.updateWeights(x, target, pred);
                         errors++;
